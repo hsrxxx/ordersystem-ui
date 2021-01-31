@@ -6,32 +6,64 @@
             <el-button type="danger" plain size="small" icon="el-icon-delete" :disabled="deleteDisabled" @click="handleDeletes(multipleSelection)">删除</el-button>
         </div>
         
-        <el-dialog title="新增用户" :visible.sync="dialogFormVisible" width="30%" :showClose="false" :close-on-click-modal="false">
-            <el-form :model="form" :rules="rules" ref="form" label-width="60px">
-                <el-form-item label="名称" prop="username">
-                    <el-input v-model="form.name" autocomplete="off"></el-input>
+        <el-dialog title="新增用户" :visible.sync="dialogFormVisible" width="40%" :showClose="false" :close-on-click-modal="false">
+            <el-form id="form" :model="form" :rules="rules" ref="form" label-width="60px">
+                <el-row>
+                    <el-col :span="12">
+                        <el-form-item label="名称" prop="username">
+                            <el-input v-model="form.username" autocomplete="off"></el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="昵称" prop="nickname">
+                            <el-input v-model="form.nickname" autocomplete="off"></el-input>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col :span="12">
+                        <el-form-item label="邮箱" prop="email">
+                            <el-input type="email" v-model="form.email" autocomplete="off"></el-input>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="手机" prop="telephone">
+                            <el-input type="number" v-model="form.telephone" autocomplete="off"></el-input>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col :span="12">
+                        <el-form-item label="性别" prop="sex">
+                            <el-select v-model="form.sex" placeholder="请选择">
+                                <el-option
+                                        v-for="item in sex"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="状态" prop="status">
+                            <el-select v-model="form.status" placeholder="请选择">
+                                <el-option
+                                        v-for="item in status"
+                                        :key="item.value"
+                                        :label="item.label"
+                                        :value="item.value">
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+
+                <el-form-item label="住址" prop="address">
+                    <el-input v-model="form.address" autocomplete="off"></el-input>
                 </el-form-item>
-                <el-form-item label="昵称" prop="nickname">
-                    <el-input v-model="form.price" type="number" autocomplete="off"></el-input>
-                </el-form-item>
-                <el-form-item label="性别" prop="gender">
-                    <el-input v-model="form.flavor" autocomplete="off"></el-input>
-                </el-form-item>
-                <el-form-item label="手机" prop="telephone">
-                    <el-input v-model="form.flavor" autocomplete="off"></el-input>
-                </el-form-item>
-                <el-form-item label="地址" prop="flavor">
-                    <el-input v-model="form.flavor" autocomplete="off"></el-input>
-                </el-form-item>
-                <el-form-item label="分类" prop="tid">
-                    <el-select v-model="form.tid" placeholder="请选择分类">
-                        <el-option
-                            v-for="item in options"
-                            :key="item.id"
-                            :label="item.name"
-                            :value="item.id">
-                        </el-option>
-                    </el-select>
+                <el-form-item label="备注">
+                    <el-input type="textarea" v-model="form.remark"></el-input>
                 </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
@@ -40,10 +72,11 @@
             </div>
         </el-dialog>
 
-        <el-table 
+        <el-table
+            id="user"
             ref="multipleTable"
-            :data="tableData" 
-            :header-cell-style="{background:'#f8f8f9'}" 
+            :data="tableData"
+            :header-cell-style="{ background:'#f8f8f9' }"
             style="margin-top:20px"
             @selection-change="handleSelectionChange">
              <el-table-column
@@ -58,9 +91,9 @@
             </el-table-column>
             <el-table-column prop="telephone" label="用户手机" header-align="center" align="center">
             </el-table-column>
-            <el-table-column prop="gender" label="性别" header-align="center" align="center">
+            <el-table-column prop="sex" label="性别" header-align="center" align="center">
             </el-table-column>
-            <el-table-column prop="registerdate" label="创建时间" header-align="center" align="center">
+            <el-table-column prop="status" label="状态" header-align="center" align="center">
             </el-table-column>
             <el-table-column
                 fixed="right"
@@ -90,10 +123,10 @@
 
 <script>
 
-    import qs from 'qs'
+    import { findAllUser, countUser, findByIdUser, deleteByIdUser, deleteBatchIdsUser, updateByIdUser, saveUser } from '@/request/api'
 
     export default {
-        name: 'OrderSystemMenu',
+        name: 'OrderSystemUser',
         data() {
 
             // 自定义校验
@@ -140,112 +173,91 @@
                 deleteDisabled: true,
                 dialogFormVisible: false,
                 addLoading: false,
+                sex: [
+                    {
+                        value: '0',
+                        label: '男'
+                    },
+                    {
+                        value: '1',
+                        label: '女'
+                    },
+                    {
+                        value: '2',
+                        label: '未知'
+                    }
+                ],
+                status: [
+                    {
+                        value: '0',
+                        label: '正常'
+                    },
+                    {
+                        value: '1',
+                        label: '停用'
+                    }
+                ],
                 form: {
                     id: '',
                     username: '',
                     nickname: '',
-                    gender: '',
+                    email: '',
                     telephone: '',
-                    registerdate: '',
+                    sex: '',
                     address: '',
+                    remark: '',
+                    status: '',
                 },
                 rules: {
-                    name: [
-
+                    username: [
                         { validator: validateName, required: true, trigger: 'blur' }
                     ],
-                    price: [
+                    nickname: [
                         { validator: validatePrice, required: true, trigger: 'blur' }
                     ],
-                    flavor: [
-                        { validator: validateFlavor, required: true, trigger: 'blur' }
-                    ],
-                    tid: [
-                        { validator: validateType, required: true, trigger: 'blur' }
-                    ]
                 },
                 options: [],
             }
         },
         created() {
-            this.findAll(this.index,this.limit)
-            this.userCount()
+            this.findAllUser(this.index,this.limit)
+            countUser().then(res => { this.count = res })
         },
         methods: {
-
-            findAll(index, limit) {
-                this.$http.get(`/user/findAll/${index}/${limit}`).then(res => {
-                    this.tableData = res.data
-                })
-            },
-            findById(id){
-                this.$http.get(`/user/findById/${id}`).then(res => {
-                    this.form = {
-                        id: res.data.id,
-                        name: res.data.name,
-                        price: (res.data.price).toString(),
-                        flavor: res.data.flavor,
-                        tid: res.data.tid,
-                    }
-                })
-            },
-            deleteById(id){
-                this.$http.delete(`/user/deleteById/${id}`,).then(res => {
-                    this.$Message("删除成功!")
-                    this.findAll(this.index, this.limit)
-                })
-            },
-            deleteBatchIds(ids){
-                let params = {
-                    ids: ids
-                }
-                this.$http.delete(
-                    '/user/deleteBatchIds', 
-                    {
-                        params,
-                        paramsSerializer: params => {
-                            return qs.stringify(params, { indices: false })
-                        }
-                    }).then(res => {
-                    this.$Message("删除成功!")
-                    this.findAll(this.index, this.limit)
-                })
-            },
-            updateById(data){
-                this.$http.put('/user/updateById',data).then(res => {
-                    this.$Message.success("修改成功!")
-                    this.findAll(this.index, this.limit)
-                })
-            },
-            save(data){
-                this.$http.post('/user/save', data).then(res => {
-                    this.$Message.success("新增成功!")
-                    this.findAll(this.index, this.limit)
-                })
+            findAllUser(index, limit){
+                findAllUser(index,limit)
+                    .then( res => {
+                        this.tableData = res
+                    })
             },
             saveOrUpdate(){
                 let data = {
                     id: this.form.id,
-                    name: this.form.name,
-                    price: this.form.price,
-                    flavor: this.form.flavor,
-                    tid: this.form.tid,
+                    username: this.form.username,
+                    nickname: this.form.nickname,
+                    email: this.form.email,
+                    telephone: this.form.telephone,
+                    sex: this.form.sex,
+                    address: this.form.address,
+                    status: this.form.status,
+                    remark: this.form.remark,
                 }
                 this.addLoading = true
-                
-                if(data.id == ''){
-                    this.save(data)
+
+                if(data.id === ''){
+                    saveUser(data).then(res => {
+                        this.$Message.success("新增成功!")
+                        this.findAllUser(this.index, this.limit)
+                    })
                 }else{
-                    this.updateById(data)
+                    updateByIdUser(data).then(res => {
+                        this.$Message.success("修改成功!")
+                        this.findAllUser(this.index, this.limit)
+                    })
                 }
 
                 this.dialogFormVisible = false
                 this.addLoading = false
-            },
-            userCount(){
-                this.$http.get('/user/count').then(res => {
-                    this.count = res.data
-                })
             },
 
 
@@ -260,58 +272,82 @@
                 })
             },
             handleDelete(row) {
-                this.deleteById(row.id)
+                deleteByIdUser(row.id).then(res => {
+                    this.$Message("删除成功!")
+                    this.findAllUser(this.index, this.limit)
+                })
             },
             handleDeletes(row){
                 let ids = []
                 for (let index = 0; index < row.length; index++) {
                     ids.push(row[index].id)
                 }
-                this.deleteBatchIds(ids)
+                let params = {
+                    ids: ids
+                }
+                deleteBatchIdsUser(params).then(res => {
+                    this.$Message("删除成功!")
+                    this.findAllUser(this.index, this.limit)
+                })
             },
             handleUpdate(row) {
                 this.dialogFormVisible = true
-                this.findById(row.id)
+                findByIdUser(row.id).then(res => {
+                    // this.form = res
+                    this.form = {
+                        id: res.id,
+                        username: res.username,
+                        nickname: res.nickname,
+                        email: res.email,
+                        telephone: res.telephone,
+                        sex: res.sex,
+                        address: res.address,
+                        status: res.status,
+                        remark: res.remark,
+                    }
+                })
             },
             handleAdd(){
                 this.dialogFormVisible = true
                 this.form = {
                     id: '',
-                    name: '',
-                    price: '',
-                    flavor: '',
-                    tid: '',
+                    username: '',
+                    nickname: '',
+                    email: '',
+                    telephone: '',
+                    sex: '男',
+                    address: '',
+                    remark: '',
+                    status: '正常',
                 }
             },
 
             // 分页
+            // 修改每页数量
             handleSizeChange(val) {
-                // let page = (this.index + this.limit) / this.limit
-                // this.index = (page * val) - val
                 if(this.count < val){
                     this.index = Math.ceil(this.count / val)
                 }
                 this.limit = val
-                this.findAll(this.index, this.limit)
+                this.findAllUser(this.index, this.limit)
             },
+            // 修改第几页
             handleCurrentChange(val) {
-                // this.index = (val - 1) * this.limit
-
                 this.index = val
-                this.findAll(this.index, this.limit)
+                this.findAllUser(this.index, this.limit)
             },
 
             // 多选
             handleSelectionChange(val) {
                 this.multipleSelection = val;
 
-                if (this.multipleSelection.length == 1) {
+                if (this.multipleSelection.length === 1) {
                     this.updateDisabled = false
                 }else{
                     this.updateDisabled = true
                 }
 
-                if (this.multipleSelection.length == 0) {
+                if (this.multipleSelection.length === 0) {
                     this.deleteDisabled = true
                 }else{
                     this.deleteDisabled = false

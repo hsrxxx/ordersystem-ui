@@ -1,5 +1,6 @@
 
-/**axios封装
+/**
+ * axios封装
  * 请求拦截、相应拦截、错误统一处理
  */
 import axios from 'axios';
@@ -10,12 +11,12 @@ import store from '../store/index'
 let loadinginstace
 
 // 环境的切换
-if (process.env.NODE_ENV == 'development') {    
+if (process.env.NODE_ENV === 'development') {
     axios.defaults.baseURL = '/client';
-} else if (process.env.NODE_ENV == 'debug') {    
-    axios.defaults.baseURL = '';
-} else if (process.env.NODE_ENV == 'production') {    
-    axios.defaults.baseURL = 'http://api.123dailu.com/';
+} else if (process.env.NODE_ENV === 'debug') {
+    axios.defaults.baseURL = '/client';
+} else if (process.env.NODE_ENV === 'production') {
+    axios.defaults.baseURL = '/client';
 }
  
 // 请求超时时间
@@ -28,9 +29,16 @@ axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded
 axios.interceptors.request.use(    
     config => {
         // 请求时加载element ui loading 组件
+        let domId = '#' + config.url.split('/')[1]
+        if (config.url.toString().indexOf('findById') != -1){
+            domId = '#form'
+        }
+        if (loadinginstace){
+            loadinginstace.close()
+        }
         loadinginstace = Loading.service({
-            // 根据 id 来进行渲染指定 dom 
-            target: '#' + config.url.split('/')[1],
+            // 根据 dom 的 id 来进行渲染指定 dom
+            target: domId,
             lock: true,
             text: 'Loading',
             spinner: 'el-icon-loading',
@@ -42,26 +50,32 @@ axios.interceptors.request.use(
         // // 即使本地存在token，也有可能token是过期的，所以在响应拦截器中要对返回状态进行判断
         // const token = store.state.token;        
         // // 如果 token 为空（false）则不赋值给 config.headers.Authorization 
-        // token && (config.headers.Authorization = token);        
+        // token && (config.headers.Authorization = token);
+        // console.log('调用 loading')
         return config;    
     },    
     error => {    
         // 关闭 element ui loading 组件
-        loadinginstace.close()    
+        loadinginstace && loadinginstace.close()
         return Promise.error(error);    
     })
  
 // 响应拦截器
 axios.interceptors.response.use(    
-    response => {        
-        if (response.status === 200) {  
-            loadinginstace.close()              
+    response => {
+        if (response.status === 200) {
+            // console.log('关闭 loading')
+            loadinginstace && loadinginstace.close()
             return Promise.resolve(response);        
-        } else {            
-            loadinginstace.close()    
+        } else {
+            loadinginstace && loadinginstace.close()
             return Promise.reject(response);        
         }    
     },
+    error => {
+        loadinginstace.close()
+        return Promise.reject(error.response);
+    }
     // 服务器状态码不是200的情况    
     // error => {        
     //     loadinginstace.close() 
@@ -195,10 +209,10 @@ export function qsput(url, params) {
     });
 }
 
-/** 
- * delete方法，对应delete请求 
- * @param { String } url [ 请求的url地址 ] 
- * @param { Object } params [ 请求时携带的参数 ] 
+/**
+ * delete方法，对应delete请求
+ * @param { String } url [ 请求的url地址 ]
+ * @param { Object } params [ 请求时携带的参数 ]
  */
 export function deletefn(url, params) {
     return new Promise((resolve, reject) => {
@@ -219,7 +233,14 @@ export function deletefn(url, params) {
  */
 export function qsdeletefn(url, params) {
     return new Promise((resolve, reject) => {
-        axios.delete(url, QS.stringify(params))
+        axios.delete(
+            url,
+            {
+                params,
+                paramsSerializer: params => {
+                    return QS.stringify(params, { indices: false })
+                }
+            })
             .then(res => {
                 resolve(res.data)
             })

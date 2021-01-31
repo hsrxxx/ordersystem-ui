@@ -9,19 +9,33 @@ import axios from 'axios';
 
 Vue.use(ElementUI);
 
+// 全局消息
 Vue.prototype.$Message = Message
 
-Vue.prototype.$http = axios.create({
-  baseURL: '/client',
-  headers: {
-    'Content-Type': "application/json",
-    post: {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-    }
-  }
-})
-
 Vue.config.productionTip = false
+
+// Vue.http.interceptors.push((request, next) => {
+//   let timeout;
+//
+//   if (request._timeout) {
+//
+//     timeout = setTimeout(() => {
+//       //自定义响应体 status:408,statustext:"请求超时"，并返回给下下边的next
+//       next(request.respondWith(request.body, {
+//         status: 408,
+//         statusText: '请求超时'
+//       }));
+//
+//     }, request._timeout);
+//   }
+//   next((response) => {
+//     // ...
+//     // 请求发送后的处理逻辑
+//     // ...
+//     // 根据请求的状态，response参数会返回给successCallback或errorCallback
+//     return response
+//   })
+// })
 
 new Vue({
   router,

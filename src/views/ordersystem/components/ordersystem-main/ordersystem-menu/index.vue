@@ -7,7 +7,7 @@
         </div>
         
         <el-dialog title="新增菜品" :visible.sync="dialogFormVisible" width="30%" :showClose="false" :close-on-click-modal="false">
-            <el-form :model="form" :rules="rules" ref="form" label-width="60px">
+            <el-form id="form" :model="form" :rules="rules" ref="form" label-width="60px">
                 <el-form-item label="菜品" prop="name">
                     <el-input v-model="form.name" autocomplete="off"></el-input>
                 </el-form-item>
@@ -27,10 +27,13 @@
                         </el-option>
                     </el-select>
                 </el-form-item>
+                <el-form-item label="备注" prop="remark">
+                    <el-input v-model="form.remark" autocomplete="off"></el-input>
+                </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
                 <el-button @click="dialogFormVisible = false">取 消</el-button>
-                <el-button type="primary" @click="submitForm('form')" :loading="addLoading">{{ form.id == '' ? '新 增':'修 改' }}</el-button>
+                <el-button type="primary" @click="submitForm('form')" :loading="addLoading">{{ form.id === '' ? '新 增':'修 改' }}</el-button>
             </div>
         </el-dialog>
 
@@ -52,6 +55,8 @@
             <el-table-column prop="flavor" label="口味" header-align="center" align="center">
             </el-table-column>
             <el-table-column prop="type" label="分类" header-align="center" align="center">
+            </el-table-column>
+            <el-table-column prop="remark" label="备注" header-align="center" align="center">
             </el-table-column>
             <el-table-column
                 fixed="right"
@@ -81,8 +86,7 @@
 
 <script>
 
-    import qs from 'qs'
-    import { findAllMenu } from '@/request/api'
+    import { findAllMenu, findAllType, findByIdMenu, deleteByIdMenu, deleteBatchIdsMenu, updateByIdMenu, saveMenu } from '@/request/api'
 
     export default {
         name: 'OrderSystemMenu',
@@ -103,7 +107,7 @@
                     if (value instanceof Number || typeof value == 'number') {
                         callback(new Error('请输入数字'));
                     } else {
-                        if(value.toString().split(".").length != 2 && value.toString().split(".").length != 1){
+                        if(value.toString().split(".").length !== 2 && value.toString().split(".").length !== 1){
                             callback(new Error('请输入数字'));
                         }
                         callback();
@@ -138,6 +142,7 @@
                     price: '',
                     flavor: '',
                     tid: '',
+                    remark: '',
                 },
                 rules: {
                     name: [
@@ -158,90 +163,43 @@
             }
         },
         created() {
-            findAllMenu(this.index,this.limit)
-                .then( res => {
-                    this.tableData = res.data
-                    this.count = res.count
-                })
-            // this.findAll(this.index,this.limit)
-            this.findType()
+            this.findAllMenu(this.index,this.limit)
+            findAllType().then(res => { this.options = res })
         },
         methods: {
-
-            findAll(index, limit) {
-                this.$http.get(`/menu/findAll/${index}/${limit}`).then(res => {
-                    this.tableData = res.data.data
-                    this.count = res.data.count
-                })
-            },
-            findById(id){
-                this.$http.get(`/menu/findById/${id}`).then(res => {
-                    this.form = {
-                        id: res.data.id,
-                        name: res.data.name,
-                        price: (res.data.price).toString(),
-                        flavor: res.data.flavor,
-                        tid: res.data.tid,
-                    }
-                })
-            },
-            deleteById(id){
-                this.$http.delete(`/menu/deleteById/${id}`,).then(res => {
-                    this.$Message("删除成功!")
-                    this.findAll(this.index, this.limit)
-                })
-            },
-            deleteBatchIds(ids){
-                let params = {
-                    ids: ids
-                }
-                this.$http.delete(
-                    '/menu/deleteBatchIds', 
-                    {
-                        params,
-                        paramsSerializer: params => {
-                            return qs.stringify(params, { indices: false })
-                        }
-                    }).then(res => {
-                    this.$Message("删除成功!")
-                    this.findAll(this.index, this.limit)
-                })
-            },
-            updateById(data){
-                this.$http.put('/menu/updateById',data).then(res => {
-                    this.$Message.success("修改成功!")
-                    this.findAll(this.index, this.limit)
-                })
-            },
-            save(data){
-                this.$http.post('/menu/save', data).then(res => {
-                    this.$Message.success("新增成功!")
-                    this.findAll(this.index, this.limit)
-                })
+            findAllMenu(index, limit){
+                findAllMenu(index,limit)
+                    .then( res => {
+                        this.tableData = res.data
+                        this.count = res.count
+                    })
             },
             saveOrUpdate(){
+
                 let data = {
                     id: this.form.id,
                     name: this.form.name,
                     price: this.form.price,
                     flavor: this.form.flavor,
                     tid: this.form.tid,
+                    remark: this.form.remark,
                 }
                 this.addLoading = true
                 
-                if(data.id == ''){
-                    this.save(data)
+                if(data.id === ''){
+                    saveMenu(data).then(res => {
+                        this.$Message.success("新增成功!")
+                        this.findAllMenu(this.index, this.limit)
+                    })
                 }else{
-                    this.updateById(data)
+                    updateByIdMenu(data).then(res => {
+                        this.$Message.success("修改成功!")
+                        this.findAllMenu(this.index, this.limit)
+                    })
                 }
 
                 this.dialogFormVisible = false
                 this.addLoading = false
-            },
-            findType(){
-                this.$http.get(`/menu/findAllTypes`).then(res => {
-                    this.options = res.data
-                })
             },
 
 
@@ -256,18 +214,37 @@
                 })
             },
             handleDelete(row) {
-                this.deleteById(row.id)
+                deleteByIdMenu(row.id).then(res => {
+                    this.$Message("删除成功!")
+                    this.findAllMenu(this.index, this.limit)
+                })
             },
             handleDeletes(row){
                 let ids = []
                 for (let index = 0; index < row.length; index++) {
                     ids.push(row[index].id)
                 }
-                this.deleteBatchIds(ids)
+                let params = {
+                    ids: ids
+                }
+                deleteBatchIdsMenu(params).then(res => {
+                    this.$Message("删除成功!")
+                    this.findAllMenu(this.index, this.limit)
+                })
             },
             handleUpdate(row) {
                 this.dialogFormVisible = true
-                this.findById(row.id)
+                findByIdMenu(row.id).then(res => {
+                    // this.form = res
+                    this.form = {
+                        id: res.id,
+                        name: res.name,
+                        price: (res.price).toString(),
+                        flavor: res.flavor,
+                        tid: res.tid,
+                        remark: res.remark,
+                    }
+                })
             },
             handleAdd(){
                 this.dialogFormVisible = true
@@ -277,37 +254,36 @@
                     price: '',
                     flavor: '',
                     tid: '',
+                    remark: '',
                 }
             },
 
             // 分页
+            // 修改每页数量
             handleSizeChange(val) {
-                // let page = (this.index + this.limit) / this.limit
-                // this.index = (page * val) - val
                 if(this.count < val){
                     this.index = Math.ceil(this.count / val)
                 }
                 this.limit = val
-                this.findAll(this.index, this.limit)
+                this.findAllMenu(this.index, this.limit)
             },
+            // 修改第几页
             handleCurrentChange(val) {
-                // this.index = (val - 1) * this.limit
-
                 this.index = val
-                this.findAll(this.index, this.limit)
+                this.findAllMenu(this.index, this.limit)
             },
 
             // 多选
             handleSelectionChange(val) {
                 this.multipleSelection = val;
 
-                if (this.multipleSelection.length == 1) {
+                if (this.multipleSelection.length === 1) {
                     this.updateDisabled = false
                 }else{
                     this.updateDisabled = true
                 }
 
-                if (this.multipleSelection.length == 0) {
+                if (this.multipleSelection.length === 0) {
                     this.deleteDisabled = true
                 }else{
                     this.deleteDisabled = false
